@@ -27,6 +27,9 @@ public class ScoreScreen extends Screen {
 	/** Code of last mayus character. */
 	private static final int LAST_CHAR = 90;
 
+    //Added for persist per-player breakdown
+    private final GameState gameState;
+
 	/** Current score. */
 	private int score;
 	/** Player lives left. */
@@ -61,6 +64,7 @@ public class ScoreScreen extends Screen {
 	public ScoreScreen(final int width, final int height, final int fps,
 			final GameState gameState) {
 		super(width, height, fps);
+        this.gameState = gameState; //Added
 
 		this.score = gameState.getScore();
 		this.livesRemaining = gameState.getLivesRemaining();
@@ -151,7 +155,7 @@ public class ScoreScreen extends Screen {
 	 * Saves the score as a high score.
 	 */
 	private void saveScore() {
-		highScores.add(new Score(new String(this.name), score));
+		highScores.add(new Score(new String(this.name), this.gameState));
 		Collections.sort(highScores);
 		if (highScores.size() > MAX_HIGH_SCORE_NUM)
 			highScores.remove(highScores.size() - 1);
@@ -171,6 +175,10 @@ public class ScoreScreen extends Screen {
 
 		drawManager.drawGameOver(this, this.inputDelay.checkFinished(),
 				this.isNewRecord);
+
+        float accuracy = (this.bulletsShot >0)
+                ? (float) this.shipsDestroyed / this.bulletsShot : 0f;
+
 		drawManager.drawResults(this, this.score, this.livesRemaining,
 				this.shipsDestroyed, (float) this.shipsDestroyed
 						/ this.bulletsShot, this.isNewRecord);
@@ -181,3 +189,4 @@ public class ScoreScreen extends Screen {
 		drawManager.completeDrawing(this);
 	}
 }
+
