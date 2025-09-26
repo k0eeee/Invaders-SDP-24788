@@ -26,13 +26,18 @@ public class GameState {
 	private final int[] lives          = new int[NUM_PLAYERS];
 	private final int[] bulletsShot    = new int[NUM_PLAYERS];
 	private final int[] shipsDestroyed = new int[NUM_PLAYERS];
-
+    private int score2;
+    private int livesRemaining2;
+    private int bulletsShot2;
+    private int shipsDestroyed2;
 	/* ---------- Constructors ---------- */
 
 	/** Legacy single-player constructor (kept for compatibility). */
 	public GameState(final int level, final int score,
 					 final int livesRemaining, final int bulletsShot,
-					 final int shipsDestroyed) {
+					 final int shipsDestroyed, final int score2,
+                     final int livesRemaining2, final int bulletsShot2,
+                     final int shipsDestroyed2) {
 		this.level = level;
 		this.coop = false;
 		this.sharedLives = false;
@@ -40,7 +45,11 @@ public class GameState {
 		this.lives[0] = livesRemaining;
 		this.bulletsShot[0] = bulletsShot;
 		this.shipsDestroyed[0] = shipsDestroyed;
-	}
+        this.score2 = score2;
+        this.livesRemaining2 = livesRemaining2;
+        this.bulletsShot2 = bulletsShot2;
+        this.shipsDestroyed2 = shipsDestroyed2;
+}
 
 	/**
 	 * New co-op constructor with SHARED lives.
@@ -84,6 +93,19 @@ public class GameState {
 	public final int getLivesRemaining() { return sharedLives ? teamLives : (lives[0] + lives[1]); }
 	public final int getBulletsShot()    { return bulletsShot[0] + bulletsShot[1]; }
 	public final int getShipsDestroyed() { return shipsDestroyed[0] + shipsDestroyed[1]; }
+
+    public final int getScore2() {
+        return score2;
+    }
+    public final int getLivesRemaining2() {
+        return livesRemaining2;
+    }
+    public final int getBulletsShot2() {
+        return bulletsShot2;
+    }
+    public final int getShipsDestroyed2() {
+        return shipsDestroyed2;
+    }
 
 	/* ---------- Level & mode ---------- */
 	public final int getLevel() { return level; }
