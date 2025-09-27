@@ -176,9 +176,7 @@ public class ScoreScreen extends Screen {
 		drawManager.drawGameOver(this, this.inputDelay.checkFinished(),
 				this.isNewRecord);
 
-		float accuracy = (this.bulletsShot > 0)
-				? (float) this.shipsDestroyed / this.bulletsShot
-				: 0f;
+		float accuracy = (this.bulletsShot > 0) ? (float) this.shipsDestroyed / this.bulletsShot : 0f;
 
 		// draw results, changed to handle if bulletShots == 0 (avoiding NaN)
 		drawManager.drawResults(this, this.score, this.livesRemaining,
