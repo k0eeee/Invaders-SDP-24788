@@ -16,6 +16,9 @@ import screen.TitleScreen;
 
 /**
  * Implements core game logic.
+ *
+ * @author <a href="mailto:RobertoIA1987@gmail.com">Roberto Izquierdo Amo</a>
+ *
  */
 public final class Core {
 
@@ -36,6 +39,7 @@ public final class Core {
 	private static final GameSettings SETTINGS_LEVEL_6 = new GameSettings(7, 7, 10, 1000);
 	private static final GameSettings SETTINGS_LEVEL_7 = new GameSettings(8, 7, 2, 500);
 
+	/** Frame to draw the screen on. */
 	private static Frame frame;
 	private static Screen currentScreen;
 	private static List<GameSettings> gameSettings;
@@ -43,6 +47,12 @@ public final class Core {
 	private static Handler fileHandler;
 	private static ConsoleHandler consoleHandler;
 
+	/**
+	 * Test implementation.
+	 *
+	 * @param args
+	 *             Program args, ignored.
+	 */
 	public static void main(final String[] args) {
 		try {
 			LOGGER.setUseParentHandlers(false);
@@ -76,8 +86,7 @@ public final class Core {
 		int returnCode = 1;
 		do {
 			// Co-op game with SHARED lives: team pool = MAX_LIVES * 2 (e.g., 6).
-			gameState = new GameState(/*level*/ 1, /*livesEach*/ MAX_LIVES, /*coop*/ true);
-
+			gameState = new GameState(1, MAX_LIVES, true);
 			switch (returnCode) {
 				case 1:
 					currentScreen = new TitleScreen(width, height, FPS);
@@ -89,7 +98,7 @@ public final class Core {
 				case 2:
 					do {
 						// Extra life this level? Give it if team pool is below cap.
-						int teamCap = MAX_LIVES * GameState.NUM_PLAYERS;
+						int teamCap = gameState.isCoop() ? (MAX_LIVES * GameState.NUM_PLAYERS) : MAX_LIVES;
 						boolean bonusLife = gameState.getLevel() % EXTRA_LIFE_FRECUENCY == 0
 								&& gameState.getLivesRemaining() < teamCap;
 
@@ -121,12 +130,14 @@ public final class Core {
 					break;
 
 				case 3:
+					// High scores.
 					currentScreen = new HighScoreScreen(width, height, FPS);
-					LOGGER.info("Starting " + WIDTH + "x" + HEIGHT + " high score screen at " + FPS + " fps.");
+					LOGGER.info("Starting " + WIDTH + "x" + HEIGHT
+							+ " high score screen at " + FPS + " fps.");
 					returnCode = frame.setScreen(currentScreen);
 					LOGGER.info("Closing high score screen.");
 					break;
-
+          
 				default:
 					break;
 			}
@@ -138,14 +149,72 @@ public final class Core {
 		System.exit(0);
 	}
 
-	private Core() {}
+	/**
+	 * Constructor, not called.
+	 */
+	private Core() {
 
-	public static Logger getLogger() { return LOGGER; }
-	public static DrawManager getDrawManager() { return DrawManager.getInstance(); }
-	public static InputManager getInputManager() { return InputManager.getInstance(); }
-	public static FileManager getFileManager() { return FileManager.getInstance(); }
-	public static Cooldown getCooldown(final int milliseconds) { return new Cooldown(milliseconds); }
-	public static Cooldown getVariableCooldown(final int milliseconds, final int variance) {
+	}
+
+	/**
+	 * Controls access to the logger.
+	 * sh
+	 * 
+	 * @return Application logger.
+	 */
+	public static Logger getLogger() {
+		return LOGGER;
+	}
+
+	/**
+	 * Controls access to the drawing manager.
+	 *
+	 * @return Application draw manager.
+	 */
+	public static DrawManager getDrawManager() {
+		return DrawManager.getInstance();
+	}
+
+	/**
+	 * Controls access to the input manager.
+	 *
+	 * @return Application input manager.
+	 */
+	public static InputManager getInputManager() {
+		return InputManager.getInstance();
+	}
+
+	/**
+	 * Controls access to the file manager.
+	 *
+	 * @return Application file manager.
+	 */
+	public static FileManager getFileManager() {
+		return FileManager.getInstance();
+	}
+
+	/**
+	 * Controls creation of new cooldowns.
+	 *
+	 * @param milliseconds
+	 *                     Duration of the cooldown.
+	 * @return A new cooldown.
+	 */
+	public static Cooldown getCooldown(final int milliseconds) {
+		return new Cooldown(milliseconds);
+	}
+
+	/**
+	 * Controls creation of new cooldowns with variance.
+	 *
+	 * @param milliseconds
+	 *                     Duration of the cooldown.
+	 * @param variance
+	 *                     Variation in the cooldown duration.
+	 * @return A new cooldown with variance.
+	 */
+	public static Cooldown getVariableCooldown(final int milliseconds,
+			final int variance) {
 		return new Cooldown(milliseconds, variance);
 	}
 }

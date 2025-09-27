@@ -2,115 +2,197 @@
 package engine;
 
 /**
- * Stores game state between levels. Supports 2-player co-op with shared lives.
+ * Implements an object that stores the state of the game between levels -
+ * supports 2-player co-op with shared lives.
+ *
+ * @author <a href="mailto:RobertoIA1987@gmail.com">Roberto Izquierdo Amo</a>
+ *
+ * 
  */
 public class GameState {
 
-	public static final int NUM_PLAYERS = 2;
+	// 2P mode: number of players used for shared lives in co-op
+	public static final int NUM_PLAYERS = 2; // adjust later if needed
+
+	// 2P mode: true if in co-op mode
+	private final boolean coop;
 
 	/** Current game level. */
 	private int level;
 
-	/** Co-op flag. */
-	private final boolean coop;
-
-	/** Shared-lives mode for co-op (team life pool). */
+	// 2P mode: if true, lives are shared in a team pool; else per-player lives
 	private final boolean sharedLives;
 
-	/** Team life pool and cap (used when sharedLives = true). */
+	// team life pool and cap (used when sharedLives == true).
 	private int teamLives;
 	private int teamLivesCap;
 
-	/** Per-player tallies (still used for stats/scoring; lives[] unused in shared mode). */
-	private final int[] score          = new int[NUM_PLAYERS];
-	private final int[] lives          = new int[NUM_PLAYERS];
-	private final int[] bulletsShot    = new int[NUM_PLAYERS];
+	/** Current coin count. */ // ADD THIS LINE
+	private int coins; // ADD THIS LINE
+
+	// 2P mode: co-op aware constructor used by the updated Core loop - livesEach
+	// applies per-player; co-op uses shared pool.
+	public GameState(final int level, final int livesEach, final boolean coop) {
+		this.level = level;
+		this.coop = coop;
+
+		if (coop) {
+			this.sharedLives = true;
+			this.teamLives = Math.max(0, livesEach * NUM_PLAYERS);
+			this.teamLivesCap = this.teamLives;
+		} else {
+			this.sharedLives = false;
+			this.teamLives = 0;
+			this.teamLivesCap = 0;
+			// legacy: put all lives on P1
+			lives[0] = Math.max(0, livesEach);
+		}
+		this.coins = 0; // coins start at 0 by default instead of extra parameter
+	}
+
+	// 2P mode: per-player tallies (used for stats/scoring; lives[] unused in shared
+	// mode).
+	private final int[] score = new int[NUM_PLAYERS];
+	private final int[] lives = new int[NUM_PLAYERS];
+	private final int[] bulletsShot = new int[NUM_PLAYERS];
 	private final int[] shipsDestroyed = new int[NUM_PLAYERS];
-    private int score2;
-    private int livesRemaining2;
-    private int bulletsShot2;
-    private int shipsDestroyed2;
+
 	/* ---------- Constructors ---------- */
 
-	/** Legacy single-player constructor (kept for compatibility). */
+	/** Legacy 6-arg - kept for old call sites */
+	/**
+	 * Constructor.
+	 *
+	 * @param level
+	 *                       Current game level.
+	 * @param score
+	 *                       Current score.
+	 * @param livesRemaining
+	 *                       Lives currently remaining.
+	 * @param bulletsShot
+	 *                       Bullets shot until now.
+	 * @param shipsDestroyed
+	 *                       Ships destroyed until now.
+	 * @param coins          // ADD THIS LINE
+	 *                       Current coin count. // ADD THIS LINE
+	 */
 	public GameState(final int level, final int score,
-					 final int livesRemaining, final int bulletsShot,
-					 final int shipsDestroyed, final int score2,
-                     final int livesRemaining2, final int bulletsShot2,
-                     final int shipsDestroyed2) {
+			final int livesRemaining, final int bulletsShot,
+			final int shipsDestroyed, final int coins) { // MODIFY THIS LINE
 		this.level = level;
-		this.coop = false;
 		this.sharedLives = false;
+		this.teamLives = 0;
+		this.teamLivesCap = 0;
+
 		this.score[0] = score;
 		this.lives[0] = livesRemaining;
 		this.bulletsShot[0] = bulletsShot;
 		this.shipsDestroyed[0] = shipsDestroyed;
-        this.score2 = score2;
-        this.livesRemaining2 = livesRemaining2;
-        this.bulletsShot2 = bulletsShot2;
-        this.shipsDestroyed2 = shipsDestroyed2;
-}
-
-	/**
-	 * New co-op constructor with SHARED lives.
-	 * @param level starting level
-	 * @param livesEach lives per player (used to compute team pool = livesEach * NUM_PLAYERS)
-	 * @param coop set true for co-op
-	 */
-	public GameState(final int level, final int livesEach, final boolean coop) {
-		this.level = level;
-		this.coop = coop;
-		this.sharedLives = true;                    // shared pool ON
-		this.teamLives = livesEach * NUM_PLAYERS;   // e.g., 3 * 2 = 6 total hearts
-		this.teamLivesCap = livesEach * NUM_PLAYERS;
-		// per-player lives[] unused in shared mode, but left at 0
+    
+		this.coins = coins; // ADD THIS LINE
+		this.coop = false; // 2P: single-player mode
 	}
 
-	/* ---------- Per-player stats API ---------- */
-	public int  getScore(final int p)          { return score[p]; }
-	public int  getLives(final int p)          { return sharedLives ? teamLives : lives[p]; }
-	public int  getBulletsShot(final int p)    { return bulletsShot[p]; }
-	public int  getShipsDestroyed(final int p) { return shipsDestroyed[p]; }
-
-	public void addScore(final int p, final int delta) { score[p] += delta; }
-	public void incBulletsShot(final int p)            { bulletsShot[p]++; }
-	public void incShipsDestroyed(final int p)         { shipsDestroyed[p]++; }
-
-	/** Decrement life (shared pool if enabled; otherwise per player). */
-	public void decLife(final int p) {
-		if (sharedLives) decTeamLife(1);
-		else if (lives[p] > 0) lives[p]--;
+	/* ------- 2P mode: aggregate totals used by Core/ScoreScreen/UI------- */
+	public int getScore() {
+		int t = 0;
+		for (int p = 0; p < NUM_PLAYERS; p++)
+			t += score[p];
+		return t;
 	}
 
-	/* ---------- Shared-lives helpers ---------- */
-	public boolean isSharedLives()         { return sharedLives; }
-	public int     getTeamLives()          { return teamLives; }
-	public void    addTeamLife(final int n){ teamLives = Math.min(teamLivesCap, teamLives + n); }
-	public void    decTeamLife(final int n){ teamLives = Math.max(0, teamLives - n); }
+	public int getLivesRemaining() {
+		return sharedLives ? teamLives : (lives[0] + lives[1]);
+	}
 
-	/* ---------- Aggregate (legacy) getters: keep UI working ---------- */
-	public final int getScore()          { return score[0] + score[1]; }
-	public final int getLivesRemaining() { return sharedLives ? teamLives : (lives[0] + lives[1]); }
-	public final int getBulletsShot()    { return bulletsShot[0] + bulletsShot[1]; }
-	public final int getShipsDestroyed() { return shipsDestroyed[0] + shipsDestroyed[1]; }
+	public int getBulletsShot() {
+		int t = 0;
+		for (int p = 0; p < NUM_PLAYERS; p++)
+			t += bulletsShot[p];
+		return t;
+	}
 
-    public final int getScore2() {
-        return score2;
-    }
-    public final int getLivesRemaining2() {
-        return livesRemaining2;
-    }
-    public final int getBulletsShot2() {
-        return bulletsShot2;
-    }
-    public final int getShipsDestroyed2() {
-        return shipsDestroyed2;
-    }
+	public int getShipsDestroyed() {
+		int t = 0;
+		for (int p = 0; p < NUM_PLAYERS; p++)
+			t += shipsDestroyed[p];
+		return t;
 
-	/* ---------- Level & mode ---------- */
-	public final int getLevel() { return level; }
-	public void nextLevel()     { level++; }
-	public boolean isCoop()     { return coop; }
+	}
+
+	public int getCoins() {
+		return coins;
+	}
+
+	/* ----- Per-player getters (needed by Score.java) ----- */
+	public int getScore(final int p) {
+		return (p >= 0 && p < NUM_PLAYERS) ? score[p] : 0;
+	}
+
+	public int getBulletsShot(final int p) {
+		return (p >= 0 && p < NUM_PLAYERS) ? bulletsShot[p] : 0;
+	}
+
+	public int getShipsDestroyed(final int p) {
+		return (p >= 0 && p < NUM_PLAYERS) ? shipsDestroyed[p] : 0;
+	}
+
+	public void addScore(final int p, final int delta) {
+		score[p] += delta;
+	}
+
+	public void incBulletsShot(final int p) {
+		bulletsShot[p]++;
+	}
+
+	public void incShipsDestroyed(final int p) {
+		shipsDestroyed[p]++;
+	}
+
+	// ===== Mode / life-pool helpers expected elsewhere =====
+	public boolean isCoop() {
+		return coop;
+	}
+
+	public boolean isSharedLives() {
+		return sharedLives;
+	}
+
+	public int getTeamLives() {
+		return teamLives;
+	}
+
+	public void addTeamLife(final int n) {
+		if (sharedLives)
+			teamLives = Math.min(teamLivesCap, teamLives + Math.max(0, n));
+	}
+
+	public void decTeamLife(final int n) {
+		if (sharedLives)
+			teamLives = Math.max(0, teamLives - Math.max(0, n));
+	}
+
+	// map "remaining lives" to team pool in co-op; P1 in 1P legacy
+	public void setLivesRemaining(int v) {
+		if (sharedLives) {
+			teamLives = Math.max(0, Math.min(teamLivesCap, v));
+		} else {
+			lives[0] = Math.max(0, v);
+		}
+	}
+
+	public int getLevel() {
+		return level;
+	}
+
+	public void nextLevel() {
+		level++;
+	}
+
+	// Team alive if pool > 0 (shared) or any player has lives (separate).
+	public boolean teamAlive() {
+		return sharedLives ? (teamLives > 0) : (lives[0] > 0 || lives[1] > 0);
+	}
 
 	/** Team is alive while teamLives > 0 (shared) or any player has lives (separate). */
 	public boolean teamAlive()  { return sharedLives ? teamLives > 0 : (lives[0] > 0 || lives[1] > 0); }
