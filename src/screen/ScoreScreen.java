@@ -191,4 +191,5 @@ public class ScoreScreen extends Screen {
 
 		drawManager.completeDrawing(this);
 	}
+
 }
