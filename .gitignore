@@ -146,6 +146,9 @@ sdist
 develop-eggs
 .installed.cfg
 
+# Build output
+out/production/
+
 # Installer logs
 pip-log.txt
 
@@ -169,3 +172,8 @@ pip-log.txt
 log*
 *.ttf
 .checkstyle
+.idea/
+.vscode/
+*.iml
+*.class
+/out/
